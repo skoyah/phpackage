@@ -29,8 +29,12 @@ class NewCommand extends Command
 
         $this->assertFolderDoesNotExist($path);
 
+        $output->writeln('<info>Creating boilerplate...</info>');
+
         $this->install($src, $directory)
              ->rename($this->folder, $path);
+
+        $output->writeln('<info>Done. Ready for creating an awesome package!</info>');
     }
 
     private function assertFolderDoesNotExist($path)
