@@ -21,6 +21,12 @@ Now everytime you want to create a new package just run the following command on
 $ phpackage new awesome-package-name
 ```
 
+This will create a folder sructure similar to this:
+
+![Folder Structure](folder_structure.png)
+
+&nbsp;
+
 In addition, if you want to use the well-known template
 [Skeleton](https://github.com/thephpleague/skeleton), from [The PHP League](https://github.com/thephpleague), just run the same command with the `--src skeleton`flag. This will install the most recent version of that template.
 ```shell
