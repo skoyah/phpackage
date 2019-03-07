@@ -2,8 +2,7 @@
     "name": "skoyah/phpackage",
     "description": "Scaffolds a new php package project.",
     "keywords": [
-        "skoyah",
-        "phpackage"
+        "skoyah", "phpackage", "package", "development", "template"
     ],
     "homepage": "https://github.com/skoyah/phpackage",
     "license": "MIT",
