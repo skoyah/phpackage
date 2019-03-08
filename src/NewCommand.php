@@ -5,6 +5,7 @@ namespace PHPackage;
 use ZipArchive;
 use RuntimeException;
 use GuzzleHttp\Client;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
@@ -13,52 +14,60 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class NewCommand extends Command
 {
+    protected $fileSystem;
+
+    protected $directory;
+
+    protected $path;
+
+    public function __construct()
+    {
+        $this->fileSystem = new Filesystem();
+        $this->directory = getcwd();
+
+        parent::__construct();
+    }
+
     public function configure()
     {
         $this->setName('new')
              ->setDescription('Create a new package boilerplate')
              ->addArgument('name', InputArgument::REQUIRED)
-             ->addOption('src', null, InputOption::VALUE_OPTIONAL, 'Boilerplate from the selected source', 'self');
+             ->addOption('src', null, InputOption::VALUE_OPTIONAL, 'Boilerplate from the selected source', 'self')
+             ->addOption('unit', null, InputOption::VALUE_OPTIONAL);
     }
 
     public function execute(InputInterface $input, OutputInterface $output)
     {
-        $directory = getcwd();
-        $src = $input->getOption('src');
-        $path = "{$directory}/{$input->getArgument('name')}";
-
-        $this->assertFolderDoesNotExist($path);
-
-        $output->writeln('<info>Creating boilerplate...</info>');
-
-        $this->install($src, $directory)
-             ->rename($this->folder, $path);
+        $this->assertFolderDoesNotExist($input->getArgument('name'))
+             ->getTemplateFrom($input->getOption('src'))
+             ->createDirectoryStructure($input);
 
         $output->writeln('<info>Done. Ready for creating an awesome package!</info>');
     }
 
-    private function assertFolderDoesNotExist($path)
+    private function assertFolderDoesNotExist($folderName)
     {
-        if (is_dir($path)) {
+        $this->path = $this->directory . '/' . $folderName;
+
+        if (is_dir($this->path)) {
             throw new RuntimeException('Folder already exists!');
         }
+
+        return $this;
     }
 
-    private function install($src, $directory)
+    private function getTemplateFrom($src)
     {
         if ($src == 'skeleton') {
-            $this->download($zipFile = $this->makeFileName())
-            ->extract($zipFile, $directory)
-            ->removeZipFile($zipFile);
+            $this->zipFile = getcwd() . '/skeleton-master.zip';
 
-            $this->folder = "{$directory}/skeleton-master";
+            $this->download($this->zipFile);
 
             return $this;
         }
 
-        $this->extract($zipFile = __DIR__ . '/template.zip', $directory);
-
-        $this->folder = "{$directory}/template";
+        $this->zipFile = __DIR__ . '/template.zip';
 
         return $this;
     }
@@ -72,31 +81,55 @@ class NewCommand extends Command
         return $this;
     }
 
-    private function extract($zipFile, $directory)
+    private function createDirectoryStructure($input)
+    {
+        $this->extract($this->zipFile)
+             ->removeZipFile($this->zipFile);
+
+        rename($this->directory . '/' . pathinfo($this->zipFile, PATHINFO_FILENAME), $this->path);
+
+        $this->handleAdditionalFlags($input);
+    }
+
+    private function extract($zipFile)
     {
         $archive = new ZipArchive;
-
-        $archive->open($zipFile);
-        $archive->extractTo($directory);
+        $archive->open($this->zipFile);
+        $archive->extractTo($this->directory);
         $archive->close();
 
         return $this;
     }
 
-    private function makeFileName()
-    {
-        return getcwd() . '/skeleton_' . md5(time() . uniqid()) . '.zip';
-    }
-
     private function removeZipFile($zipFile)
     {
-        @chmod($zipFile, 0777);
-
-        @unlink($zipFile);
+        if ($zipFile != __DIR__ . '/template.zip') {
+            @chmod($zipFile, 0777);
+            @unlink($zipFile);
+        }
     }
 
-    private function rename($folder, $path)
+    private function handleAdditionalFlags($input)
     {
-        rename($this->folder, $path);
+        if ($input->hasParameterOption('--unit')) {
+            $this->fileSystem->mkdir($this->path . '/tests');
+            $this->fileSystem->copy(__DIR__ . '/stubs/phpunit.stub', $this->path . '/phpunit.xml.dist');
+            $this->addDevDependency('phpunit/phpunit', '^8.0');
+        }
+    }
+
+    private function addDevDependency($package, $version)
+    {
+        $jsonData = json_decode(
+            file_get_contents($this->path . '/composer.json'),
+            true
+        );
+
+        $jsonData['require-dev'][$package] = $version;
+
+        file_put_contents(
+            $this->path . '/composer.json',
+            json_encode($jsonData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+        );
     }
 }

@@ -2,26 +2,33 @@
     "name": "skoyah/phpackage",
     "description": "Scaffolds a new php package project.",
     "keywords": [
-        "skoyah", "phpackage", "package", "development", "template"
+        "skoyah",
+        "phpackage",
+        "package",
+        "development",
+        "template"
     ],
     "homepage": "https://github.com/skoyah/phpackage",
     "license": "MIT",
-        "authors": [
-            {
-                "name": "João Santos",
-                "email": "joaoecoceanus@gmail.com",
-                "homepage": "https://github.com/skoyah",
-                "role": "Developer"
-            }
-        ],
+    "authors": [
+        {
+            "name": "João Santos",
+            "email": "joaoecoceanus@gmail.com",
+            "homepage": "https://github.com/skoyah",
+            "role": "Developer"
+        }
+    ],
     "require": {
         "symfony/console": "^4.2",
-        "guzzlehttp/guzzle": "^6.3"
+        "guzzlehttp/guzzle": "^6.3",
+        "symfony/filesystem": "^4.2"
     },
     "autoload": {
         "psr-4": {
             "PHPackage\\": "src"
         }
     },
-    "bin": ["phpackage"]
+    "bin": [
+        "phpackage"
+    ]
 }
